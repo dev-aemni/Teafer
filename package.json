@@ -1,0 +1,35 @@
+{
+  "name": "teafer",
+  "version": "1.0.0",
+  "description": "AI Tutor Application",
+  "main": "build/index.js",
+  "bin": "build/index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "build": "tsc && pkg ."
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "system-prompt.txt",
+      "api-keys.txt"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

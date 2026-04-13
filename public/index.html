@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Teafer - Assessment</title>
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root { /* Light Mode (Default) */
+            --primary: #4F46E5; --primary-hover: #4338CA; --primary-light: #EEF2FF;
+            --green: #10B981; --green-light: #D1FAE5; --green-dark: #047857;
+            --red: #EF4444; --red-light: #FEE2E2; --red-dark: #B91C1C;
+            --bg-color: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border-color: #E5E7EB;
+        }
+
+        :root[data-theme="dark"] { /* Dark Mode */
+            --primary: #6366F1; --primary-hover: #818CF8; --primary-light: #3730A3;
+            --green: #34D399; --green-light: #064E3B; --green-dark: #A7F3D0;
+            --red: #F87171; --red-light: #7F1D1D; --red-dark: #FECACA;
+            --bg-color: #111827;
+            --card-bg: #1F2937;
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --border-color: #374151;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-color); font-family: 'Segoe UI', system-ui, sans-serif; color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+        
+        /* --- HEADER & THEME TOGGLE --- */
+        header { background: var(--card-bg); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: background-color 0.3s, border-color 0.3s; }
+        .logo { font-size: 20px; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; }
+        .header-controls { display: flex; align-items: center; gap: 20px; }
+        .theme-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { width: 40px; height: 22px; background-color: #ccc; border-radius: 22px; position: relative; transition: background-color 0.3s; }
+        .slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: transform 0.3s; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        .stats-container { display: none; align-items: center; gap: 15px; font-weight: bold; }
+        .score-badge { background: var(--primary-light); color: var(--primary); padding: 5px 12px; border-radius: 20px; font-size: 14px; }
+        .quit-btn { background: #F3F4F6; color: var(--text-muted); border: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .quit-btn:hover { background: var(--red-light); color: var(--red); }
+        :root[data-theme="dark"] .quit-btn { background: #374151; color: var(--text-muted); }
+
+        /* --- SCREENS --- */
+        .screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 20px; overflow-y: auto; }
+        #exam-screen { display: none; justify-content: flex-start; padding-top: 5vh; }
+
+        .setup-card { background: var(--card-bg); width: 100%; max-width: 450px; padding: 40px 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.04); border: 1px solid var(--border-color); transition: background-color 0.3s, border-color 0.3s; }
+        .setup-card h1 { font-size: 32px; margin-bottom: 10px; color: var(--text-main); text-align: center; }
+        .input-group input, .input-group select { width: 100%; padding: 16px; border: 2px solid var(--border-color); border-radius: 14px; font-size: 16px; outline: none; transition: 0.2s; background: var(--bg-color); color: var(--text-main); }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary); background: var(--card-bg); }
+        .start-btn { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 18px; font-weight: bold; cursor: pointer; transition: transform 0.1s, background 0.2s; margin-top: 10px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        
+        .assessment-card { background: var(--card-bg); width: 100%; max-width: 800px; border-radius: 24px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.05); position: relative; overflow: hidden; animation: slideUp 0.4s ease-out; transition: background-color 0.3s; }
+        .feedback-banner { padding: 16px 20px; border-radius: 12px; margin-bottom: 25px; font-size: 15px; font-weight: 500; display: none; line-height: 1.5; }
+        .feedback-banner.correct { display: block; background: var(--green-light); color: var(--green-dark); border-left: 5px solid var(--green); }
+        .feedback-banner.incorrect { display: block; background: var(--red-light); color: var(--red-dark); border-left: 5px solid var(--red); }
+        .question-text { font-size: 22px; font-weight: 600; line-height: 1.5; color: var(--text-main); margin-bottom: 30px; white-space: pre-wrap; }
+        .question-text code { background: var(--bg-color); padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #E11D48; font-size: 18px; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 12px; }
+        .option-btn { background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 16px; padding: 18px 20px; text-align: left; font-size: 16px; font-weight: 500; color: var(--text-main); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 15px; }
+        .opt-letter { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--bg-color); color: var(--text-muted); border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary-light); background: var(--primary-light); }
+        .option-btn:hover:not(:disabled) .opt-letter { background: white; color: var(--primary); }
+        :root[data-theme="dark"] .option-btn:hover:not(:disabled) .opt-letter { background: #374151; }
+        .option-btn.selected { border-color: var(--primary); background: var(--primary-light); }
+        .option-btn.selected .opt-letter { background: var(--primary); color: white; }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        .sa-input-area { display: none; flex-direction: column; gap: 15px; }
+        .sa-input-area textarea { width: 100%; padding: 20px; border: 2px solid var(--border-color); border-radius: 16px; font-size: 16px; outline: none; resize: vertical; min-height: 120px; font-family: inherit; background: var(--bg-color); color: var(--text-main); }
+        .sa-input-area textarea:focus { border-color: var(--primary); background: var(--card-bg); }
+        .sa-submit-btn { align-self: flex-end; padding: 14px 30px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; border-radius: 24px; z-index: 10; backdrop-filter: blur(2px); transition: background-color 0.3s; }
+        :root[data-theme="dark"] .loading-overlay { background: rgba(31, 41, 55, 0.9); }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        .loading-text { color: var(--primary); font-weight: bold; font-size: 15px; animation: pulse 1.5s infinite; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Other small element styles from previous versions */
+        .setup-card p { text-align: center; color: var(--text-muted); margin-bottom: 30px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Teafer</div>
+        <div class="header-controls">
+            <!-- Dark Mode Toggle -->
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+            <div class="stats-container" id="stats-container">
+                <div class="score-badge">Score: <span id="score-val">0</span>/<span id="q-count">0</span></div>
+                <button class="quit-btn" onclick="location.reload()">End Exam</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- SETUP SCREEN -->
+    <div id="home-screen" class="screen">
+        <div class="setup-card">
+            <h1>Start an Exam</h1>
+            <p>Configure your AI assessment.</p>
+            <div class="input-group">
+                <label>Topic</label>
+                <input type="text" id="topic-input" placeholder="e.g. JavaScript Arrays, World War 2" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>Difficulty Level</label>
+                <select id="level-input">
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Exam Format</label>
+                <select id="mode-input">
+                    <option value="Multiple Choice">Multiple Choice</option>
+                    <option value="Short Answer">Short Answer</option>
+                </select>
+            </div>
+            <button class="start-btn" id="start-btn">Start Assessment</button>
+        </div>
+    </div>
+
+    <!-- EXAM SCREEN -->
+    <div id="exam-screen" class="screen">
+        <div class="assessment-card" id="assessment-card">
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner"></div>
+                <div class="loading-text">Evaluating answer...</div>
+            </div>
+            <div id="feedback-banner" class="feedback-banner"></div>
+            <div id="question-area" class="question-text">Loading your first question...</div>
+            <div id="options-area" class="options-grid"></div>
+            <div id="sa-input-area" class="sa-input-area">
+                <textarea id="sa-textarea" placeholder="Type your answer here..."></textarea>
+                <button class="sa-submit-btn" id="sa-submit-btn">Submit Answer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const homeScreen = document.getElementById('home-screen');
+        const examScreen = document.getElementById('exam-screen');
+        const statsContainer = document.getElementById('stats-container');
+        const startBtn = document.getElementById('start-btn');
+        const feedbackBanner = document.getElementById('feedback-banner');
+        const questionArea = document.getElementById('question-area');
+        const optionsArea = document.getElementById('options-area');
+        const saInputArea = document.getElementById('sa-input-area');
+        const saTextarea = document.getElementById('sa-textarea');
+        const saSubmitBtn = document.getElementById('sa-submit-btn');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        let chatHistory = [];
+        let systemPrompt = '';
+        let currentMode = '';
+        let score = 0;
+        let questionsAsked = 0;
+
+        // --- THEME SWITCHING LOGIC ---
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('teafer-theme', theme);
+            themeToggle.checked = theme === 'dark';
+        }
+
+        themeToggle.addEventListener('change', () => {
+            applyTheme(themeToggle.checked ? 'dark' : 'light');
+        });
+
+        // --- INITIALIZATION ---
+        async function init() {
+            // Set theme on load
+            const savedTheme = localStorage.getItem('teafer-theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+
+            try {
+                startBtn.innerText = "Connecting to Server...";
+                startBtn.disabled = true;
+                const res = await fetch('/api/system-prompt');
+                if (!res.ok) throw new Error("Could not load backend prompt.");
+                systemPrompt = await res.text();
+                startBtn.innerText = "Start Assessment";
+                startBtn.disabled = false;
+            } catch (err) {
+                startBtn.innerText = "Server Offline";
+                startBtn.style.background = "var(--red)";
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            const topic = document.getElementById('topic-input').value.trim();
+            const level = document.getElementById('level-input').value;
+            currentMode = document.getElementById('mode-input').value;
+
+            if (!topic) return alert("Please enter a topic first!");
+
+            homeScreen.style.display = "none";
+            examScreen.style.display = "flex";
+            statsContainer.style.display = "flex";
+
+            chatHistory.push({ role: "system", content: systemPrompt });
+
+            const firstMessage = `I want to take an exam on "${topic}". My knowledge level is "${level}". The Exam Mode is "${currentMode}". Ask the first question.`;
+            callBackend(firstMessage, true);
+        });
+
+        function formatText(text) { 
+            if (!text) return "";
+            return text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\`(.*?)\`/g, '<code>$1</code>'); 
+        }
+
+        // --- NEW: XML/TAG-BASED PARSER ---
+        function updateAssessmentUI(rawText, isFirstQuestion) {
+            feedbackBanner.className = "feedback-banner"; 
+            feedbackBanner.innerHTML = "";
+            optionsArea.innerHTML = "";
+            saTextarea.value = "";
+
+            // Use regex to safely extract content from tags
+            const feedbackMatch = rawText.match(/<feedback>([\s\S]*?)<\/feedback>/);
+            const questionMatch = rawText.match(/<question>([\s\S]*?)<\/question>/);
+
+            const feedbackText = feedbackMatch ? feedbackMatch[1].trim() : "";
+            let questionText = questionMatch ? questionMatch[1].trim() : "Sorry, I had trouble generating the next question. Please try again.";
+            
+            // 1. Render Feedback (if it exists)
+            if (feedbackText) {
+                feedbackBanner.innerHTML = formatText(feedbackText);
+                const lowerFeedback = feedbackText.toLowerCase();
+                
+                if (lowerFeedback.includes("incorrect") || lowerFeedback.includes("score: 0/") || lowerFeedback.includes("score: 1/")) {
+                    feedbackBanner.classList.add("incorrect");
+                } else {
+                    feedbackBanner.classList.add("correct");
+                    if (!isFirstQuestion) score++;
+                }
+            }
+            
+            if (!isFirstQuestion) questionsAsked++;
+
+            // Update stats
+            document.getElementById('score-val').innerText = score;
+            document.getElementById('q-count').innerText = questionsAsked;
+
+            // 2. Extract Multiple Choice Options from the question text
+            let options = [];
+            if (currentMode === "Multiple Choice") {
+                let lines = questionText.split('\n');
+                let qLines = [];
+                const regex = /^([A-D])[.)]\s*(.*)/i; 
+                for (let l of lines) { 
+                    let m = l.trim().match(regex); 
+                    if (m) options.push({ letter: m[1].toUpperCase(), text: m[2] }); 
+                    else qLines.push(l); 
+                } 
+                questionText = qLines.join('\n').trim(); 
+                saInputArea.style.display = "none";
+            } else {
+                saInputArea.style.display = "flex";
+                optionsArea.style.display = "none";
+            }
+
+            // 3. Render Question & Options
+            questionArea.innerHTML = formatText(questionText);
+            if (options.length > 0) {
+                optionsArea.style.display = "flex";
+                options.forEach(opt => { 
+                    const btn = document.createElement('button'); 
+                    btn.className = 'option-btn'; 
+                    btn.innerHTML = `<span class="opt-letter">${opt.letter}</span> <span class="opt-text">${formatText(opt.text)}</span>`; 
+                    btn.onclick = () => { 
+                        document.querySelectorAll('.option-btn').forEach(b => b.disabled = true); 
+                        btn.classList.add('selected'); 
+                        callBackend(`My answer is ${opt.letter}.`, false); 
+                    }; 
+                    optionsArea.appendChild(btn); 
+                }); 
+            }
+        }
+
+        async function callBackend(userText, isFirstQuestion = false) {
+            chatHistory.push({ role: "user", content: userText });
+            loadingOverlay.style.display = "flex";
+            loadingOverlay.querySelector('.loading-text').innerText = isFirstQuestion ? "Preparing exam..." : "Evaluating answer...";
+            saSubmitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: chatHistory })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    alert("Error: " + (data.error || "Server failed"));
+                    chatHistory.pop();
+                } else {
+                    const aiMessage = data.message;
+                    chatHistory.push(aiMessage);
+                    updateAssessmentUI(aiMessage.content, isFirstQuestion);
+                }
+            } catch (error) {
+                alert("Network Error reaching backend.");
+            } finally {
+                loadingOverlay.style.display = "none";
+                saSubmitBtn.disabled = false;
+            }
+        }
+
+        saSubmitBtn.addEventListener('click', () => {
+            const ans = saTextarea.value.trim();
+            if (ans !== '') callBackend(ans, false);
+        });
+
+        init();
+    </script>
+</body>
+</html>
